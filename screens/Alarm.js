@@ -1,13 +1,52 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { textStyles, styles } from '../styles/styles';
+import { Audio } from 'expo-av';
+
+
+
+//import alarm_sound from "../assets/cringy_alarm_sound1.wav"
+
+//import { Notifications } from 'expo';
+//import * as Permissions from 'expo-permissions';
 
 function AlarmClock() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [alarmTime, setAlarmTime] = useState(null);
   const [isAlarmSet, setIsAlarmSet] = useState(false);
-  const [countdown, setCountdown] = useState('');
+    const [countdown, setCountdown] = useState('');
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~  New Code ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    const [sound, setSound] = useState();
+
+    async function playSound() { // Sound works as long as PHONE IS NOT ON VIBRATE
+        try {
+            //console.log('Loading Sound');
+            const { sound } = await Audio.Sound.createAsync(require('../assets/cringy_alarm_sound1.wav'));
+            setSound(sound);
+
+            //console.log('Playing Sound');
+            await sound.playAsync();
+        } catch (error) {
+            console.error('Error loading or playing sound for alarm:', error.message);
+        }
+    }
+
+    const stopSound = async () => { // Stops repeats, but since it only runs 1 sound cycle its pretty useless rn.
+        try {
+            if (sound) {
+                console.log('Stopping Sound');
+                await sound.stopAsync();
+                await sound.unloadAsync(); 
+                setSound(null); 
+            }
+        } catch (error) {
+            console.error('Error stopping sound:', error.message);
+        }
+    };
+   
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~  New Code END ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -25,9 +64,10 @@ function AlarmClock() {
     const currentTime = new Date();
     const timeUntilAlarm = date - currentTime;
     setTimeout(() => {
-      alert('Wake up!');
-      setIsAlarmSet(false);
-      setCountdown('');
+        playSound();
+        Alert.alert('Wake up!', 'Time to wake up!', [{ text: 'Dismiss', onPress: stopSound }]);
+        setIsAlarmSet(false);
+        setCountdown('');
     }, timeUntilAlarm);
 
     // Start updating the countdown every second
